@@ -41,10 +41,30 @@ class OrderService {
 
   Future<Map<String, dynamic>> createOrder(
       String accessToken, int planId, String period) async {
-    return await _httpService.postRequest(
+    // 构造请求体
+    final Map<String, dynamic> requestBody = {
+      "plan_id": planId,
+      "period": period,
+    };
+  
+    // 发送 POST 请求
+    final result = await _httpService.postRequest(
       "/api/v1/user/order/save",
-      {"plan_id": planId, "period": period},
-      headers: {'Authorization': accessToken},
+      requestBody,
+      headers: {
+        "Authorization": accessToken,
+        "Content-Type": "application/json", // 确保设置正确的 Content-Type
+      },
     );
+  
+    // 检查响应是否成功
+    if (result.containsKey("data")) {
+      return {
+        "orderId": result["data"],
+      };
+    } else {
+      throw Exception("Order creation failed: ${result['message'] ?? 'Unknown error'}");
+    }
   }
+
 }
