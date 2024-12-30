@@ -207,7 +207,7 @@ jobs:
 
   build_ios:
     permissions: write-all
-    runs-on: macos-15
+    runs-on: macos-14
     steps:
       - name: Checkout
         uses: actions/checkout@v3
