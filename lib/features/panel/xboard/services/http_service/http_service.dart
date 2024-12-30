@@ -12,7 +12,7 @@ class HttpService {
     baseUrl = await DomainService.fetchValidDomain();
   }
 
-  // 统一的 GET 请求方法
+  // 通用的 GET 请求方法
   Future<Map<String, dynamic>> getRequest(
     String endpoint, {
     Map<String, String>? headers,
@@ -21,37 +21,32 @@ class HttpService {
 
     try {
       final response = await http
-          .get(
-            url,
-            headers: headers,
-          )
+          .get(url, headers: headers)
           .timeout(const Duration(seconds: 20)); // 设置超时时间
 
       if (kDebugMode) {
-        print("GET $baseUrl$endpoint response: ${response.body}");
+        print("GET $url response: ${response.body}");
       }
+
       if (response.statusCode == 200) {
         return json.decode(response.body) as Map<String, dynamic>;
       } else {
         throw Exception(
-            "GET request to $baseUrl$endpoint failed: ${response.statusCode}, ${response.body}");
+            "GET request failed: ${response.statusCode}, ${response.body}");
       }
     } catch (e) {
       if (kDebugMode) {
-        print('Error during GET request to $baseUrl$endpoint: $e');
+        print('GET request error: $e');
       }
       rethrow;
     }
   }
 
-  // 统一的 POST 请求方法
-
-  // 统一的 POST 请求方法，增加 requiresHeaders 开关
+  // 通用的 POST 请求方法
   Future<Map<String, dynamic>> postRequest(
     String endpoint,
     Map<String, dynamic> body, {
     Map<String, String>? headers,
-    bool requiresHeaders = true, // 新增开关参数，默认需要 headers
   }) async {
     final url = Uri.parse('$baseUrl$endpoint');
 
@@ -59,25 +54,28 @@ class HttpService {
       final response = await http
           .post(
             url,
-            headers: requiresHeaders
-                ? (headers ?? {'Content-Type': 'application/json'})
-                : null,
-            body: json.encode(body),
+            headers: {
+              'Content-Type': 'application/json',
+              if (headers != null) ...headers, // 合并自定义头部
+            },
+            body: json.encode(body), // 将请求体序列化为 JSON
           )
           .timeout(const Duration(seconds: 20)); // 设置超时时间
 
       if (kDebugMode) {
-        print("POST $baseUrl$endpoint response: ${response.body}");
+        print("POST $url request body: ${json.encode(body)}");
+        print("POST $url response: ${response.body}");
       }
+
       if (response.statusCode == 200) {
         return json.decode(response.body) as Map<String, dynamic>;
       } else {
         throw Exception(
-            "POST request to $baseUrl$endpoint failed: ${response.statusCode}, ${response.body}");
+            "POST request failed: ${response.statusCode}, ${response.body}");
       }
     } catch (e) {
       if (kDebugMode) {
-        print('Error during POST request to $baseUrl$endpoint: $e');
+        print('POST request error: $e');
       }
       rethrow;
     }
@@ -88,32 +86,10 @@ class HttpService {
     String endpoint,
     Map<String, dynamic> body,
   ) async {
-    final url = Uri.parse('$baseUrl$endpoint');
-
-    try {
-      final response = await http
-          .post(
-            url,
-            body: json.encode(body),
-          )
-          .timeout(const Duration(seconds: 20)); // 设置超时时间
-
-      if (kDebugMode) {
-        print(
-            "POST $baseUrl$endpoint without headers response: ${response.body}");
-      }
-      if (response.statusCode == 200) {
-        return json.decode(response.body) as Map<String, dynamic>;
-      } else {
-        throw Exception(
-            "POST request to $baseUrl$endpoint failed: ${response.statusCode}, ${response.body}");
-      }
-    } catch (e) {
-      if (kDebugMode) {
-        print(
-            'Error during POST request without headers to $baseUrl$endpoint: $e');
-      }
-      rethrow;
-    }
+    return await postRequest(
+      endpoint,
+      body,
+      headers: {}, // 不设置默认头部
+    );
   }
 }
